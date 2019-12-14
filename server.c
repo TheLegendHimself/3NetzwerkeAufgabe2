@@ -135,14 +135,18 @@ int	main(	int	argc,	char	**argv	)
 		}
 		
 		int	lenRequest	=	1;
-		char	request[REQ_LEN];//	=	"\n";
-		char	*fullRequest;
+		char	*request	=	"\n";
+		char	*fullRequest[10];
+		int	lineCount=0;
 		while(	(	lenRequest	>	0	)	&&	strcmp(	"\n",	request	)	)
 		{
 			lenRequest	=	get_line(	sockfd,	request,	REQ_LEN	-	1	);
-			strcpy(	fullRequest,	request	);	
+			strcpy(	fullRequest[lineCount],	request	);
+			
+			printf(	"%s",	fullRequest[lineCount]	);
+			lineCount++;
 		}
-		printf(	"%s",	fullRequest	);
+		
 		
 		/*
 		// Read from connection
