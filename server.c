@@ -10,11 +10,14 @@
 // Define Buffer length
 //const	size_t	BUF_LEN	=	128;
 const	size_t	REQ_LEN	=	1024;
-const	char	*NotImpl	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n\\r\\n\n";
+const	char	*NotImpl	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
 const	char	*NotImplFile	=	"<html><body><b>501</b> Operation not supported</body></html>\\r\\n\n";
-const	char	*ok	=	"HTTP/1.0 200 OK\\r\\n\n\\r\\n\n";
+const	char	*NotImpl1	=	"\\r\\n\n";
+const	char	*ok	=	"HTTP/1.0 200 OK\\r\\n\n";
 const	char	*ok1	=	"Content-type: text/html\\r\\n\n";
+const	char	*ok3	=	"\\r\\n\n";
 const	char	*okFile	=	"<html><body>Dies ist die eine Fake Seite des Webservers!</body></html>\\r\\n\n";
+const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\\r\\n\n";
 
 int	get_line(	int	sock,	char	*buf,	int	size	)
 {
@@ -166,7 +169,9 @@ int	main(	int	argc,	char	**argv	)
 				printf(	"Not Found 404\n"	);
 			}else{
 				write(	connfd,	ok,	strlen(	ok	)	);
-				write(	connfd,	ok1, strlen(	ok1	)	);
+				write(	connfd,	ok1,	strlen(	ok1	)	);
+				write(	connfd,	serverName,	strlen( serverName	)	);
+				write(	connfd,	ok3,	strlen(	ok3	)	);
 				char	fileout[REQ_LEN];
 				//printf(	"Size fileout: %d\n",	sizeof(	fileout	)	);
 				//printf(	"Size fileout: %d\n",	strlen(	fileout	)	);
@@ -192,7 +197,10 @@ int	main(	int	argc,	char	**argv	)
 			//write(	connfd,	okFile,	strlen(	okFile	)	);
 		}else{	
 			write(	connfd,	NotImpl,	strlen(	NotImpl	)	);
+			write(	connfd,	serverName,	strlen( serverName	)	);
+			write(	connfd,	ok3,	strlen(	ok3	)	);
 			write(	connfd,	NotImplFile,	strlen(	NotImplFile	)	);
+			write(	connfd,	NotImpl1,	strlen(	NotImpl1	)	);
 		}
 
 		// strtok( string der gesplittet wird, mit welchem zeichen )
