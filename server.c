@@ -12,6 +12,8 @@
 const	size_t	REQ_LEN	=	1024;
 const	char	*NotImpl	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n\\r\\n\n";
 const	char	*NotImplFile	=	"<html><body><b>501</b> Operation not supported</body></html>\\r\\n\n";
+const	char	*ok	=	"HTTP/1.0 200 OK\\r\\n\n\\r\\n\n";
+const	char	*okFile	=	"<html><body>Dies ist die eine Fake Seite des Webservers!</body></html>\\r\\n\n";
 
 int	get_line(	int	sock,	char	*buf,	int	size	)
 {
@@ -43,8 +45,6 @@ int	get_line(	int	sock,	char	*buf,	int	size	)
     buf[i]	=	'\0';
     return(	i	);
 }
-
-
 
 void	sysErr(	char	*msg,	int	exitCode	)			// Something unexpected happened. Report error and terminate.
 {
@@ -116,8 +116,8 @@ int	main(	int	argc,	char	**argv	)
 		size_t	RequestLength=1;
 		fullRequest	=	(	char*	)	malloc(	RequestLength	);
 		int	numchars	=	2;
-		char	method[255];
-		//size_t	i,	j;
+		char	method[25]	=	"";
+		size_t	i,	j;
 		while(	numchars	>	1	)
 		{
 			numchars	=	get_line(	connfd,	request,	sizeof(	request	)	);
@@ -129,8 +129,29 @@ int	main(	int	argc,	char	**argv	)
 		}
 		printf(	"Request complete \n"	);
 		printf(	"Complete Request: %s \n",	fullRequest	);
-		write(	connfd,	NotImpl,	strlen(	NotImpl	)	);
-		write(	connfd,	NotImplFile,	strlen(	NotImplFile	)	);
+		
+		i	=	0;
+		j	=	0;
+		while(	fullRequest[i]	!=	' '	&&	(	j	<	strlen(	fullRequest	)	)	)
+		{
+			method[i]	=	fullRequest[i];
+			i++;
+			j++;
+			if(	i	>=	20	)
+			{
+				printf(	"Method not found\n"	);
+			}
+		}
+		printf(	"Method : %s\n",	method	);
+		
+		if(	strcmp(	method,	"GET"	)	==	0	)
+		{
+			write(	connfd,	ok,	strlen(	ok	)	);
+			write(	connfd,	okFile,	strlen(	okFile	)	);
+		}else{	
+			write(	connfd,	NotImpl,	strlen(	NotImpl	)	);
+			write(	connfd,	NotImplFile,	strlen(	NotImplFile	)	);
+		}
 		//i	=	0;
 		//j	=	0;
 		/*
