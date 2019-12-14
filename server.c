@@ -25,6 +25,49 @@ void	usage(	char	*argv0	)
 	exit(	0	);
 }
 
+
+
+
+
+
+int	get_line(	int	sock,	char	*buf,	int	size	)
+{
+    int	i	=	0;
+    char	c	=	'\0';
+    int	n;
+    
+    while(	(	i	<	size	-	1	)	&& (	c	!=	'\n'	)	)
+    {
+        n	=	recv(	sock,	&c,	1,	0	);
+        /* DEBUG printf("%02X\n", c); */
+        if(	n	>	0	)
+        {
+            if(	c	==	'\r'	)
+            {
+                n	=	recv(	sock,	&c,	1,	MSG_PEEK	);
+                /* DEBUG printf("%02X\n", c); */
+                if(	(	n	>	0	)	&&	(	c	==	'\n'	)	)
+				{
+                    recv(	sock,	&c,	1,	0	);
+				}else{
+                    c	=	'\n';
+				}
+            }
+            buf[i]	=	c;
+            i++;
+        }else{
+            c = '\n';
+		}
+    }
+    buf[i]	=	'\0';
+    return(	i	);
+}
+
+
+
+
+
+
 int	main(	int	argc,	char	**argv	)
 {
 	// int for socket and connection number
@@ -40,7 +83,7 @@ int	main(	int	argc,	char	**argv	)
 	char	revBuff[BUF_LEN];
 
  	// For Error checking from Read
-	size_t	len; 
+	//size_t	len; 
 
 	// Check for right number of arguments
 	if(	argc	<	2	)
@@ -85,16 +128,17 @@ int	main(	int	argc,	char	**argv	)
 		memset(	revBuff,	0,	BUF_LEN	);
 		
 		// Accept TCP connection
-		sockfd	=	accept(	connfd,	(	struct	sockaddr	*)	&client_addr,	&addrLen	);
+		sockfd	=	accept(	connfd,	(	struct	sockaddr	*	)	&client_addr,	&addrLen	);
 		if(	sockfd	<	0	)
 		{
 			sysErr(	"Server Fault: server accept failed",	-4	);
 		}
 		
-		
-		while(	(	len	>	0	)	&&	strcmp(	"\n",	request	)	)
+		int	lenRequest	=	1;
+		char*	request	=	"\n";
+		while(	(	lenRequest	>	0	)	&&	strcmp(	"\n",	request	)	)
 		{
-			len	=	get_line(	sd,	request,	REQ_LEN	-	1	);
+			lenRequest	=	get_line(	sockfd,	request,	REQ_LEN	-	1	);
 		}
 		
 		
