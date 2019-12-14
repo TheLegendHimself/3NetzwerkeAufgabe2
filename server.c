@@ -10,7 +10,8 @@
 // Define Buffer length
 //const	size_t	BUF_LEN	=	128;
 const	size_t	REQ_LEN	=	1024;
-
+const	char	*NotImpl	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n\\r\\n\n";
+const	char	*NotImplFile	=	"<html><body><b>501</b> Operation not supported</body></html>\\r\\n\n";
 
 int	get_line(	int	sock,	char	*buf,	int	size	)
 {
@@ -111,18 +112,25 @@ int	main(	int	argc,	char	**argv	)
 		
 		//now there is that boi
 		char	request[REQ_LEN];
-		char	fullRequest[]	=	"";
+		char	*fullRequest;
+		size_t	RequestLength=1;
+		fullRequest	=	(	char*	)	malloc(	RequestLength	);
 		int	numchars	=	2;
 		char	method[255];
 		//size_t	i,	j;
 		while(	numchars	>	1	)
 		{
 			numchars	=	get_line(	connfd,	request,	sizeof(	request	)	);
-			printf(	"numchars: %d\n",	numchars	);
-			printf(	"OUT: %s\n",	request	);
+			//printf(	"numchars: %d\n",	numchars	);
+			printf(	"Received: %s\n",	request	);
+			RequestLength	+=	strlen(	request	);
+			fullRequest	=	(	char*	)	realloc(	fullRequest,	RequestLength	);
 			strcat(	fullRequest,	request	);			
-		}		
+		}
+		printf(	"Request complete \n"	);
 		printf(	"Complete Request: %s \n",	fullRequest	);
+		write(	connfd,	NotImpl,	strlen(	NotImpl	)	);
+		write(	connfd,	NotImplFile,	strlen(	NotImplFile	)	);
 		//i	=	0;
 		//j	=	0;
 		/*
