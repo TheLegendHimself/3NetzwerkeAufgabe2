@@ -8,170 +8,84 @@
 #include	<stdbool.h>
 
 // Define Buffer length
-const	size_t	BUF_LEN	=	128;
+//const	size_t	BUF_LEN	=	128;
 const	size_t	REQ_LEN	=	1024;
 
-// Something unexpected happened. Report error and terminate.
-void	sysErr(	char	*msg,	int	exitCode	)
+void	sysErr(	char	*msg,	int	exitCode	)			// Something unexpected happened. Report error and terminate.
 {
 	fprintf(	stderr,	"%s\n\t%s\n",	msg,	strerror(	errno	)	);
 	exit(	exitCode	);
 }
 
-// The user entered something stupid. Tell him.
-void	usage(	char	*argv0	)
+
+void	usage(	char	*argv0	)							// The user entered something stupid. Tell him.
 {
 	printf(	"usage : %s portnumber\n",	argv0	);
 	exit(	0	);
 }
 
-
-
-
-
-
-int	get_line(	int	sock,	char	*buf,	int	size	)
-{
-    int	i	=	0;
-    char	c	=	'\0';
-    int	n;
-    
-    while(	(	i	<	size	-	1	)	&& (	c	!=	'\n'	)	)
-    {
-        n	=	recv(	sock,	&c,	1,	0	);
-        /* DEBUG printf("%02X\n", c); */
-        if(	n	>	0	)
-        {
-            if(	c	==	'\r'	)
-            {
-                n	=	recv(	sock,	&c,	1,	MSG_PEEK	);
-                /* DEBUG printf("%02X\n", c); */
-                if(	(	n	>	0	)	&&	(	c	==	'\n'	)	)
-				{
-                    recv(	sock,	&c,	1,	0	);
-				}else{
-                    c	=	'\n';// end While
-				}
-            }
-            buf[i]	=	c;
-            i++;
-        }else{
-            c = '\n';// End While
-		}
-    }
-    buf[i]	=	'\0';// show end of string
-    return(	i	);
-}
-
-
-
-
-
-
 int	main(	int	argc,	char	**argv	)
-{
-	// int for socket and connection number
-	int	connfd,	sockfd;
-
-	// Struct for server & client ip & port
-	struct	sockaddr_in	server_addr,	client_addr; 
-
-	// length of server or client struct
-	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	); 
-
-	// RevBuff for incomming Message
-	//char	revBuff[BUF_LEN];
-
- 	// For Error checking from Read
-	//size_t	len; 
-
-	// Check for right number of arguments
-	if(	argc	<	2	)
+{	
+	int	connfd,	sockfd;										// int for socket and connection number
+	struct	sockaddr_in	server_addr,	client_addr;		// Struct for server & client ip & port
+	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	);	// length of server or client struct
+	//char	revBuff[BUF_LEN];								// RevBuff for incomming Message
+	//size_t	len;											// For Error checking from Read
+	
+	if(	argc	<	2	)									// Check for right number of arguments
 	{
 		usage(	argv[0]	);
 	}
 
-	// Creates Socket (TCP)
-	if(	(	connfd	=	socket(	AF_INET,	SOCK_STREAM,	0	)	)	==	-1	)
+	
+	if(	(	sockfd	=	socket(	AF_INET,	SOCK_STREAM,	0	)	)	==	-1	)	// Creates Socket (TCP)
 	{
 		sysErr(	"Server Fault : SOCKET",	-1	);
+	}else{
+		printf(	"TCP Socket Created\n"	);
 	}
 	
-	// writes 0's to server ip 
-	memset(	&server_addr,	0,	addrLen	);
-	//sets server ip adress to own ip adress 
-	server_addr.sin_addr.s_addr	=	htonl(	INADDR_ANY	);
-	// The ip adress is a iPv4 adress
-	server_addr.sin_family	=	AF_INET;
-	// sets port:
-	server_addr.sin_port	=	htons(	(	u_short	)	atoi(	argv[1]	)	);
+	memset(	&server_addr,	0,	addrLen	);					// writes 0's to server ip 	 
+	server_addr.sin_addr.s_addr	=	htonl(	INADDR_ANY	);	// sets server ip adress to own ip adress	
+	server_addr.sin_family	=	AF_INET;					// The ip adress is a iPv4 adress	
+	server_addr.sin_port	=	htons(	(	u_short	)	atoi(	argv[1]	)	);	// gets port from arguments
 
-	// Bind The Socket to a connection connfd
-	if(	bind(	connfd,	(	struct	sockaddr	*	)	&server_addr,	addrLen	)	==	-1	) 
+	if(	bind(	sockfd,	(	struct	sockaddr	*	)	&server_addr,	addrLen	)	==	-1	)	// Bind The Socket to a connection connfd
 	{
 		sysErr(	"Server Fault : BIND",	-2	);
 	}else{
-		printf(	"ServerSocket Bound\n"	);
+		printf(	"Socket Bound\n"	);
 	}
 
-	// listen on this connection
-	if(	(	listen(	connfd,	1	)	)	!=	0	)
+	if(	(	listen(	sockfd,	1	)	)	!=	0	)			// listen on this connection
 	{
 		sysErr(	"Server Fault : Listen failed...",	-3	);
+	}else{
+		printf(	"Listen started\n"	);
 	}
 		
-	while(	true	)
+	while(	true	)										// Start to accept new TCP connection until [CTRL]+C
 	{
-		// wait for incoming TCP-Connection
-
-		// writes 0 to revBuff
-		//memset(	revBuff,	0,	BUF_LEN	);
-		
-		// Accept TCP connection
-		sockfd	=	accept(	connfd,	(	struct	sockaddr	*	)	&client_addr,	&addrLen	);
-		if(	sockfd	<	0	)
+		printf(	"Waiting for new connection\n"	);			// wait for incoming TCP-Connection
+		connfd	=	accept(	sockfd,	(	struct	sockaddr	*)	&client_addr,	&addrLen	);	// Accept TCP connection
+		if(	connfd	<	0	)
 		{
 			sysErr(	"Server Fault: server accept failed",	-4	);
+		}else{
+			printf(	"Connection accepted\n"	);
 		}
 		
-		int	lenRequest	=	1;
-		char	*request	=	"";
-		//char	fullRequest[]	=	"";
-		//int	lineCount	=	0;
-		printf(	"Getting to the spicy part\n"	);
-		while(	(	lenRequest	>	0	)	&&	strcmp(	"\n",	request	)	)
-		{
-			lenRequest	=	get_line(	sockfd,	request,	REQ_LEN	-	1	);
-			//strcat(	fullRequest,	request	);
-			//printf(	"it gets here"	);
-			//printf(	"%s",	fullRequest[lineCount]	);
-			//lineCount++;
-		}
-		printf(	"Left the Part :( \n"	);
-		printf(	"String %s \n", request	);
-		
 		/*
-		// Read from connection
-		len	=	read(	sockfd,	revBuff,	BUF_LEN	-	1	);
-		printf(	"Received from %s: \n",	inet_ntoa(	client_addr.sin_addr	)	);
+		memset(	revBuff,	0,	BUF_LEN	);					// writes 0 to revBuff	
+		len	=	read(	sockfd,	revBuff,	BUF_LEN	-	1	);	// Read from connection
+		printf(	"Received from %s: \n",	inet_ntoa(	client_addr.sin_addr	)	);		
+		write(	sockfd,	revBuff,	len	);						// Send TCP Packet back		
+		printf(	"Packet erhalten: %s\n",	revBuff	);		// Write TCP Packet to stdout (console)
 		*/
-		// Send TCP Packet back
-		//write(	sockfd,	,	len	);
 		
-		
-		
-		
-		
-		/*
-		// Write TCP Packet to stdout (console)
-		printf(	"Packet erhalten: %s\n",	revBuff	);
-		*/
-		// Close Sockfd
-		close(	sockfd	);
-
-		// Start to accept new TCP connection until [CTRL]+C
-	}
-	// Before exit close the initial socket
-	close(	connfd	);
+		printf(	"Connection closing\n"	);					// Close Sockfd
+		close(	connfd	);									
+	}	
+	close(	sockfd	);										// Before exit close the initial socket
 	return 0;
 }
