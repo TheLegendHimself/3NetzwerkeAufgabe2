@@ -50,16 +50,16 @@ int	get_line(	int	sock,	char	*buf,	int	size	)
 				{
                     recv(	sock,	&c,	1,	0	);
 				}else{
-                    c	=	'\n';
+                    c	=	'\n';// end While
 				}
             }
             buf[i]	=	c;
             i++;
         }else{
-            c = '\n';
+            c = '\n';// End While
 		}
     }
-    buf[i]	=	'\0';
+    buf[i]	=	'\0';// show end of string
     return(	i	);
 }
 
@@ -135,12 +135,14 @@ int	main(	int	argc,	char	**argv	)
 		}
 		
 		int	lenRequest	=	1;
-		char*	request	=	"\n";
+		char	request[REQ_LEN];//	=	"\n";
+		char	*fullRequest;
 		while(	(	lenRequest	>	0	)	&&	strcmp(	"\n",	request	)	)
 		{
 			lenRequest	=	get_line(	sockfd,	request,	REQ_LEN	-	1	);
+			strcpy(	fullRequest,	request	);	
 		}
-		
+		printf(	"%s",	fullRequest	);
 		
 		/*
 		// Read from connection
