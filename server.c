@@ -80,7 +80,7 @@ int	main(	int	argc,	char	**argv	)
 	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	); 
 
 	// RevBuff for incomming Message
-	char	revBuff[BUF_LEN];
+	//char	revBuff[BUF_LEN];
 
  	// For Error checking from Read
 	//size_t	len; 
@@ -125,7 +125,7 @@ int	main(	int	argc,	char	**argv	)
 		// wait for incoming TCP-Connection
 
 		// writes 0 to revBuff
-		memset(	revBuff,	0,	BUF_LEN	);
+		//memset(	revBuff,	0,	BUF_LEN	);
 		
 		// Accept TCP connection
 		sockfd	=	accept(	connfd,	(	struct	sockaddr	*	)	&client_addr,	&addrLen	);
@@ -136,26 +136,33 @@ int	main(	int	argc,	char	**argv	)
 		
 		int	lenRequest	=	1;
 		char	*request	=	"\n";
-		char	*fullRequest[10];
-		int	lineCount=0;
+		char	fullRequest[]	=	"";
+		//int	lineCount	=	0;
+		printf(	"Getting to the spicy part\n"	);
 		while(	(	lenRequest	>	0	)	&&	strcmp(	"\n",	request	)	)
 		{
 			lenRequest	=	get_line(	sockfd,	request,	REQ_LEN	-	1	);
-			strcpy(	fullRequest[lineCount],	request	);
-			
-			printf(	"%s",	fullRequest[lineCount]	);
-			lineCount++;
+			strcat(	fullRequest,	request	);
+			//printf(	"it gets here"	);
+			//printf(	"%s",	fullRequest[lineCount]	);
+			//lineCount++;
 		}
-		
+		printf(	"Left This Part :( \n"	);
+		printf(	"String %s \n", fullRequest	);
 		
 		/*
 		// Read from connection
 		len	=	read(	sockfd,	revBuff,	BUF_LEN	-	1	);
 		printf(	"Received from %s: \n",	inet_ntoa(	client_addr.sin_addr	)	);
-
+		*/
 		// Send TCP Packet back
-		write(	sockfd,	revBuff,	len	);
-
+		//write(	sockfd,	,	len	);
+		
+		
+		
+		
+		
+		/*
 		// Write TCP Packet to stdout (console)
 		printf(	"Packet erhalten: %s\n",	revBuff	);
 		*/
