@@ -111,7 +111,7 @@ int	main(	int	argc,	char	**argv	)
 	{
 		sysErr(	"Server Fault : BIND",	-2	);
 	}else{
-		printf(	"ServerSocket Binded"	);
+		printf(	"ServerSocket Bound\n"	);
 	}
 
 	// listen on this connection
@@ -135,20 +135,20 @@ int	main(	int	argc,	char	**argv	)
 		}
 		
 		int	lenRequest	=	1;
-		char	*request	=	"\n";
-		char	fullRequest[]	=	"";
+		char	*request	=	"";
+		//char	fullRequest[]	=	"";
 		//int	lineCount	=	0;
 		printf(	"Getting to the spicy part\n"	);
 		while(	(	lenRequest	>	0	)	&&	strcmp(	"\n",	request	)	)
 		{
 			lenRequest	=	get_line(	sockfd,	request,	REQ_LEN	-	1	);
-			strcat(	fullRequest,	request	);
+			//strcat(	fullRequest,	request	);
 			//printf(	"it gets here"	);
 			//printf(	"%s",	fullRequest[lineCount]	);
 			//lineCount++;
 		}
-		printf(	"Left This Part :( \n"	);
-		printf(	"String %s \n", fullRequest	);
+		printf(	"Left the Part :( \n"	);
+		printf(	"String %s \n", request	);
 		
 		/*
 		// Read from connection
