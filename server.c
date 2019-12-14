@@ -127,8 +127,8 @@ int	main(	int	argc,	char	**argv	)
 			fullRequest	=	(	char*	)	realloc(	fullRequest,	RequestLength	);
 			strcat(	fullRequest,	request	);			
 		}
-		printf(	"Request complete \n"	);
-		printf(	"Complete Request: %s \n",	fullRequest	);
+		//printf(	"Request complete \n"	);
+		printf(	"Complete Request: \n %s \n",	fullRequest	);
 		
 		i	=	0;
 		j	=	0;
@@ -145,7 +145,21 @@ int	main(	int	argc,	char	**argv	)
 		printf(	"Method : %s\n",	method	);
 		
 		if(	strcmp(	method,	"GET"	)	==	0	)
-		{
+		{			
+			const	char	s[2]	=	" ";
+			char	*token;
+			token	=	strtok(	fullRequest,	s	);
+			token	=	strtok(	NULL,	s	);
+			printf(	"looking for this file: %s\n",	token	);
+			
+			/* How to use strtok 
+			while(	token	!=	NULL	)
+			{
+				token	=	strtok(	NULL,	s	);
+				//printf(	"accepted part %s\n",	token	);				
+			}
+			*/
+			
 			write(	connfd,	ok,	strlen(	ok	)	);
 			write(	connfd,	okFile,	strlen(	okFile	)	);
 		}else{	
