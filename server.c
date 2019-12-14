@@ -90,6 +90,14 @@ int	main(	int	argc,	char	**argv	)
 		{
 			sysErr(	"Server Fault: server accept failed",	-4	);
 		}
+		
+		
+		while(	(	len	>	0	)	&&	strcmp(	"\n",	request	)	)
+		{
+			len	=	get_line(	sd,	request,	REQ_LEN	-	1	);
+		}
+		
+		
 		/*
 		// Read from connection
 		len	=	read(	sockfd,	revBuff,	BUF_LEN	-	1	);
