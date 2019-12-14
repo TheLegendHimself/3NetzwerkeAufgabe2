@@ -152,8 +152,9 @@ int	main(	int	argc,	char	**argv	)
 			write(	connfd,	NotImpl,	strlen(	NotImpl	)	);
 			write(	connfd,	NotImplFile,	strlen(	NotImplFile	)	);
 		}
-		//i	=	0;
-		//j	=	0;
+
+		// strtok( string der gesplittet wird, mit welchem zeichen )
+
 		/*
 		memset(	revBuff,	0,	BUF_LEN	);					// writes 0 to revBuff	
 		len	=	read(	sockfd,	revBuff,	BUF_LEN	-	1	);	// Read from connection
