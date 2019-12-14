@@ -11,6 +11,40 @@
 //const	size_t	BUF_LEN	=	128;
 const	size_t	REQ_LEN	=	1024;
 
+
+int	get_line(	int	sock,	char	*buf,	int	size	)
+{
+    int	i	=	0;
+    char	c	=	'\0';
+    int	n;
+    
+    while(	(	i	<	size	-	1	)	&&	(	c	!=	'\n'	)	)
+    {
+        n	=	recv(	sock,	&c,	1,	0	);
+        /* DEBUG printf("%02X\n", c); */
+        if(	n	>	0	)
+        {
+            if	(	c	==	'\r'	)
+            {
+                n	=	recv(	sock,	&c,	1,	MSG_PEEK	);
+                /* DEBUG printf("%02X\n", c); */
+                if(	(	n	>	0	)	&&	(	c	==	'\n'	)	)
+                    recv(	sock,	&c,	1,	0	);
+                else
+                    c	=	'\n';
+            }
+            buf[i]	=	c;
+            i++;
+        }
+        else
+            c	=	'\n';
+    }
+    buf[i]	=	'\0';
+    return(	i	);
+}
+
+
+
 void	sysErr(	char	*msg,	int	exitCode	)			// Something unexpected happened. Report error and terminate.
 {
 	fprintf(	stderr,	"%s\n\t%s\n",	msg,	strerror(	errno	)	);
@@ -75,6 +109,22 @@ int	main(	int	argc,	char	**argv	)
 			printf(	"Connection accepted\n"	);
 		}
 		
+		//now there is that boi
+		char	request[REQ_LEN];
+		char	fullRequest[]	=	"";
+		int	numchars	=	2;
+		char	method[255];
+		//size_t	i,	j;
+		while(	numchars	>	1	)
+		{
+			numchars	=	get_line(	connfd,	request,	sizeof(	request	)	);
+			printf(	"numchars: %d\n",	numchars	);
+			printf(	"OUT: %s\n",	request	);
+			strcat(	fullRequest,	request	);			
+		}		
+		printf(	"Complete Request: %s \n",	fullRequest	);
+		//i	=	0;
+		//j	=	0;
 		/*
 		memset(	revBuff,	0,	BUF_LEN	);					// writes 0 to revBuff	
 		len	=	read(	sockfd,	revBuff,	BUF_LEN	-	1	);	// Read from connection
