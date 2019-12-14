@@ -13,6 +13,7 @@ const	size_t	REQ_LEN	=	1024;
 const	char	*NotImpl	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n\\r\\n\n";
 const	char	*NotImplFile	=	"<html><body><b>501</b> Operation not supported</body></html>\\r\\n\n";
 const	char	*ok	=	"HTTP/1.0 200 OK\\r\\n\n\\r\\n\n";
+const	char	*ok1	=	"Content-type: text/html\\r\\n\n";
 const	char	*okFile	=	"<html><body>Dies ist die eine Fake Seite des Webservers!</body></html>\\r\\n\n";
 
 int	get_line(	int	sock,	char	*buf,	int	size	)
@@ -150,8 +151,35 @@ int	main(	int	argc,	char	**argv	)
 			char	*token;
 			token	=	strtok(	fullRequest,	s	);
 			token	=	strtok(	NULL,	s	);
-			printf(	"looking for this file: %s\n",	token	);
-			
+			printf(	"File: \"%s\"\n",	token	);
+			//printf(	"looking for this file: %s\n",	token	);
+			//chdir(	"mircowww"	);
+			char	pathToFile[REQ_LEN];
+			strcpy(	pathToFile,	"microwww/"	);
+			strcat(	pathToFile,	token	);
+			printf(	"FullPath \"%s\"\n",	pathToFile	);
+			FILE	*fp;			
+			//char	*fullpath	=	
+			fp	=	fopen(	pathToFile,	"r"	);	// TO-DO: check for / in token so you cant leave
+			if(	fp	==	NULL	)
+			{
+				printf(	"Not Found 404\n"	);
+			}else{
+				write(	connfd,	ok,	strlen(	ok	)	);
+				write(	connfd,	ok1, strlen(	ok1	)	);
+				char	fileout[REQ_LEN];
+				//printf(	"Size fileout: %d\n",	sizeof(	fileout	)	);
+				//printf(	"Size fileout: %d\n",	strlen(	fileout	)	);
+				while(	fgets(	fileout,	sizeof(	fileout	),	fp	)	!=	NULL	)
+				{
+					printf(	"Read and send: %s\n",	 fileout	);
+					write(	connfd,	fileout,	strlen(	fileout	)	);
+				}
+				fclose(	fp	);
+				//char	*rep	=	"Test\n";
+				//write(	connfd,	rep,	sizeof(	rep	)	);
+			}
+			//chdir(	".."	);
 			/* How to use strtok 
 			while(	token	!=	NULL	)
 			{
@@ -160,8 +188,8 @@ int	main(	int	argc,	char	**argv	)
 			}
 			*/
 			
-			write(	connfd,	ok,	strlen(	ok	)	);
-			write(	connfd,	okFile,	strlen(	okFile	)	);
+			//write(	connfd,	ok,	strlen(	ok	)	);
+			//write(	connfd,	okFile,	strlen(	okFile	)	);
 		}else{	
 			write(	connfd,	NotImpl,	strlen(	NotImpl	)	);
 			write(	connfd,	NotImplFile,	strlen(	NotImplFile	)	);
