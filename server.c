@@ -6,6 +6,7 @@
 #include	<arpa/inet.h>
 #include	<unistd.h>
 #include	<stdbool.h>
+#include	<signal.h>
 
 // Define Buffer length
 const	size_t	REQ_LEN	=	1024;
@@ -55,15 +56,31 @@ void	sysErr(	char	*msg,	int	exitCode	)			// Something unexpected happened. Repor
 	exit(	exitCode	);
 }
 
-
 void	usage(	char	*argv0	)							// The user entered something stupid. Tell him.
 {
 	printf(	"usage : %s portnumber\n",	argv0	);
 	exit(	0	);
 }
 
+int	sendAnswer(	int	code,	char	*filename	)
+{
+	if(	code	==	200	)
+	{
+		
+	}
+	
+	return	0;
+}
+
+int	getRequest();
+
+
+
 int	main(	int	argc,	char	**argv	)
 {	
+	//----------------------------------------------------------------------------------------------
+	//										SERVER START
+	//----------------------------------------------------------------------------------------------
 	int	connfd,	sockfd;										// int for socket and connection number
 	struct	sockaddr_in	server_addr,	client_addr;		// Struct for server & client ip & port
 	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	);	// length of server or client struct
@@ -98,6 +115,11 @@ int	main(	int	argc,	char	**argv	)
 	}else{
 		printf(	"Listen started\n"	);
 	}
+	
+	signal(	SIGCHLD,	SIG_IGN	);
+	//----------------------------------------------------------------------------------------------
+	//										SERVER START ENDED	
+	//----------------------------------------------------------------------------------------------	
 		
 	while(	true	)										// Start to accept new TCP connection until [CTRL]+C
 	{
