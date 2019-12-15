@@ -10,12 +10,6 @@
 
 // Define Buffer length
 const	size_t	REQ_LEN	=	1024;
-const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\\r\\n\n";
-const	char	*Header200	=	"HTTP/1.0 200 Header200\\r\\n\nContent-type: text/html\\r\\n\n";
-const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
-const	char	*Header404	=	"HTTP/1.0 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
-const	char	*emptyLine	=	"\\r\\n\n";
-
 
 int	get_line(	int	sock,	char	*buf,	int	size	)	// I didnt change Any code from this so here is no error checking :)
 {
@@ -78,7 +72,7 @@ int	sendFile(	FILE	*fp,	int	connfd	)
 		printf(	"Read and send: %s\n",	 fileout	);
 		if(	write(	connfd,	fileout,	strlen(	fileout	)	)	<	0	)
 		{
-			sysErr(	"Server Fault: writing file to socket",	-22	);
+			sysErr(	"Server Fault: writing file to socket",	-24	);
 		}
 	}
 	return	0;
@@ -132,6 +126,11 @@ int	main(	int	argc,	char	**argv	)
 	int	connfd,	sockfd;										// int for socket and connection number
 	struct	sockaddr_in	server_addr,	client_addr;		// Struct for server & client ip & port
 	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	);	// length of server or client struct
+	const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\\r\\n\n";
+	const	char	*Header200	=	"HTTP/1.0 200 Header200\\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*Header404	=	"HTTP/1.0 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*emptyLine	=	"\\r\\n\n";
 	
 	if(	argc	<	2	)									// Check for right number of arguments
 	{
@@ -166,7 +165,7 @@ int	main(	int	argc,	char	**argv	)
 	
 	if(	signal(	SIGCHLD,	SIG_IGN	)	==	SIG_ERR	)
 	{
-		sysErr(	"Server Fault: Ignore Childreturns",	-22	);
+		sysErr(	"Server Fault: Ignore Childreturns",	-23	);
 	}
 	//----------------------------------------------------------------------------------------------
 	//										SERVER START ENDED	
