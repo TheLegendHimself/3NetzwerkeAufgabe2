@@ -74,7 +74,6 @@ FILE	*getFile(	char	*token	)
 	if(	fp	==	NULL	)
 	{
 		return	NULL;
-		//printf(	"Not Found 404\n"	);
 	}
 	return	fp;
 }
@@ -109,7 +108,7 @@ char*	getRequest(	int	connfd	)
 
 char*	getMethod(	char*	fullRequest	)
 {
-	char	*method	=	(	char*	)malloc(	sizeof(	char)	*	21	);
+	char	*method	=	(	char*	)malloc(	sizeof(	char	)	*	21	);
 	size_t	i,	j;
 	
 	i	=	0;
@@ -202,9 +201,23 @@ int	main(	int	argc,	char	**argv	)
 			{			
 				const	char	s[2]	=	" ";
 				char	*token;	
+				char	*check;
+				const	char	s2[2]	=	"/";
 		//----------------------------------------------------------
 				token	=	strtok(	fullRequest,	s	);
 				token	=	strtok(	NULL,	s	);
+				
+				check	=	strtok(	token,	s2	);
+				while(	check	!=	NULL	)
+				{
+					check	=	strtok(	NULL,	s2	);
+					if(	strcmp(	check,	".."	)	==	0	)
+					{
+						printf(	"Could have tried to exit working directory\n"	);
+						strcpy(	token,	""	);
+					}
+				}
+				
 				token[strlen(	token	)]	=	'\0';			
 				printf(	"File: \"%s\"\n",	token	);
 				if(	strcmp(	token,	"/"	)	==	0	)
