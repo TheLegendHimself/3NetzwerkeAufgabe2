@@ -8,7 +8,6 @@
 #include	<stdbool.h>
 
 // Define Buffer length
-//const	size_t	BUF_LEN	=	128;
 const	size_t	REQ_LEN	=	1024;
 const	char	*NotImpl	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
 const	char	*NotImplFile	=	"<html><body><b>501</b> Operation not supported</body></html>\\r\\n\n";
@@ -68,14 +67,11 @@ int	main(	int	argc,	char	**argv	)
 	int	connfd,	sockfd;										// int for socket and connection number
 	struct	sockaddr_in	server_addr,	client_addr;		// Struct for server & client ip & port
 	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	);	// length of server or client struct
-	//char	revBuff[BUF_LEN];								// RevBuff for incomming Message
-	//size_t	len;											// For Error checking from Read
 	
 	if(	argc	<	2	)									// Check for right number of arguments
 	{
 		usage(	argv[0]	);
 	}
-
 	
 	if(	(	sockfd	=	socket(	AF_INET,	SOCK_STREAM,	0	)	)	==	-1	)	// Creates Socket (TCP)
 	{
@@ -114,28 +110,28 @@ int	main(	int	argc,	char	**argv	)
 			printf(	"Connection accepted\n"	);
 		}
 		
-		//now there is that boi
 		char	request[REQ_LEN];
 		char	*fullRequest;
-		size_t	RequestLength=1;
-		fullRequest	=	(	char*	)	malloc(	RequestLength	);
+		size_t	RequestLength	=	1;
 		int	numchars	=	2;
 		char	method[25]	=	"";
 		size_t	i,	j;
+		
+		fullRequest	=	(	char*	)	malloc(	RequestLength	);
+		
 		while(	numchars	>	1	)
 		{
 			numchars	=	get_line(	connfd,	request,	sizeof(	request	)	);
-			//printf(	"numchars: %d\n",	numchars	);
 			printf(	"Received: %s\n",	request	);
 			RequestLength	+=	strlen(	request	);
 			fullRequest	=	(	char*	)	realloc(	fullRequest,	RequestLength	);
 			strcat(	fullRequest,	request	);			
 		}
-		//printf(	"Request complete \n"	);
 		printf(	"Complete Request: \n %s \n",	fullRequest	);
 		
 		i	=	0;
 		j	=	0;
+		
 		while(	fullRequest[i]	!=	' '	&&	(	j	<	strlen(	fullRequest	)	)	)
 		{
 			method[i]	=	fullRequest[i];
@@ -144,6 +140,7 @@ int	main(	int	argc,	char	**argv	)
 			if(	i	>=	20	)
 			{
 				printf(	"Method not found\n"	);
+				break;
 			}
 		}
 		printf(	"Method : %s\n",	method	);
@@ -152,39 +149,39 @@ int	main(	int	argc,	char	**argv	)
 		{			
 			const	char	s[2]	=	" ";
 			char	*token;
+			char	pathToFile[REQ_LEN];
+			FILE	*fp;
+			
 			token	=	strtok(	fullRequest,	s	);
 			token	=	strtok(	NULL,	s	);
-			printf(	"File: \"%s\"\n",	token	);
-			//printf(	"looking for this file: %s\n",	token	);
-			//chdir(	"mircowww"	);
-			char	pathToFile[REQ_LEN];
+			token[strlen(	token	)	]	=	'\0';		
+			printf(	"File: \"%s\"\n",	token	);			
 			strcpy(	pathToFile,	"microwww/"	);
 			strcat(	pathToFile,	token	);
 			printf(	"FullPath \"%s\"\n",	pathToFile	);
-			FILE	*fp;			
-			//char	*fullpath	=	
+										
 			fp	=	fopen(	pathToFile,	"r"	);	// TO-DO: check for / in token so you cant leave
+			
 			if(	fp	==	NULL	)
 			{
 				printf(	"Not Found 404\n"	);
 			}else{
+				char	fileout[REQ_LEN];
+				
 				write(	connfd,	ok,	strlen(	ok	)	);
 				write(	connfd,	ok1,	strlen(	ok1	)	);
 				write(	connfd,	serverName,	strlen( serverName	)	);
-				write(	connfd,	ok3,	strlen(	ok3	)	);
-				char	fileout[REQ_LEN];
+				write(	connfd,	ok3,	strlen(	ok3	)	);				
 				//printf(	"Size fileout: %d\n",	sizeof(	fileout	)	);
 				//printf(	"Size fileout: %d\n",	strlen(	fileout	)	);
+				
 				while(	fgets(	fileout,	sizeof(	fileout	),	fp	)	!=	NULL	)
 				{
 					printf(	"Read and send: %s\n",	 fileout	);
 					write(	connfd,	fileout,	strlen(	fileout	)	);
 				}
 				fclose(	fp	);
-				//char	*rep	=	"Test\n";
-				//write(	connfd,	rep,	sizeof(	rep	)	);
 			}
-			//chdir(	".."	);
 			/* How to use strtok 
 			while(	token	!=	NULL	)
 			{
@@ -193,8 +190,6 @@ int	main(	int	argc,	char	**argv	)
 			}
 			*/
 			
-			//write(	connfd,	ok,	strlen(	ok	)	);
-			//write(	connfd,	okFile,	strlen(	okFile	)	);
 		}else{	
 			write(	connfd,	NotImpl,	strlen(	NotImpl	)	);
 			write(	connfd,	serverName,	strlen( serverName	)	);
@@ -203,15 +198,6 @@ int	main(	int	argc,	char	**argv	)
 			write(	connfd,	NotImpl1,	strlen(	NotImpl1	)	);
 		}
 
-		// strtok( string der gesplittet wird, mit welchem zeichen )
-
-		/*
-		memset(	revBuff,	0,	BUF_LEN	);					// writes 0 to revBuff	
-		len	=	read(	sockfd,	revBuff,	BUF_LEN	-	1	);	// Read from connection
-		printf(	"Received from %s: \n",	inet_ntoa(	client_addr.sin_addr	)	);		
-		write(	sockfd,	revBuff,	len	);						// Send TCP Packet back		
-		printf(	"Packet erhalten: %s\n",	revBuff	);		// Write TCP Packet to stdout (console)
-		*/
 		
 		printf(	"Connection closing\n"	);					// Close Sockfd
 		close(	connfd	);									
