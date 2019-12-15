@@ -16,10 +16,8 @@ const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text
 const	char	*Header404	=	"HTTP/1.0 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
 const	char	*emptyLine	=	"\\r\\n\n";
 
-//const	char	*okFile	=	"<html><body>Dies ist die eine Fake Seite des Webservers!</body></html>\\r\\n\n";
 
-
-int	get_line(	int	sock,	char	*buf,	int	size	)
+int	get_line(	int	sock,	char	*buf,	int	size	)	// I didnt change Any code from this so here is no error checking :)
 {
     int	i	=	0;
     char	c	=	'\0';
@@ -69,12 +67,7 @@ FILE	*getFile(	char	*token	)
 	strcpy(	pathToFile,	"microwww/"	);
 	strcat(	pathToFile,	token	);
 	printf(	"FullPath \"%s\"\n",	pathToFile	);
-	fp	=	fopen(	pathToFile,	"r"	);	// TO-DO: check for / in token so you cant leave
-	
-	if(	fp	==	NULL	)
-	{
-		return	NULL;
-	}
+	fp	=	fopen(	pathToFile,	"r"	);						// Maybe error check, but if NULL then it should return NULL so i dont think it is necassary
 	return	fp;
 }
 int	sendFile(	FILE	*fp,	int	connfd	)
@@ -83,7 +76,10 @@ int	sendFile(	FILE	*fp,	int	connfd	)
 	while(	fgets(	fileout,	sizeof(	fileout	),	fp	)	!=	NULL	)
 	{
 		printf(	"Read and send: %s\n",	 fileout	);
-		write(	connfd,	fileout,	strlen(	fileout	)	);
+		if(	write(	connfd,	fileout,	strlen(	fileout	)	)	<	0	)
+		{
+			sysErr(	"Server Fault: writing file to socket",	-22	);
+		}
 	}
 	return	0;
 }
@@ -144,7 +140,7 @@ int	main(	int	argc,	char	**argv	)
 	
 	if(	(	sockfd	=	socket(	AF_INET,	SOCK_STREAM,	0	)	)	==	-1	)	// Creates Socket (TCP)
 	{
-		sysErr(	"Server Fault : SOCKET",	-1	);
+		sysErr(	"Server Fault: SOCKET",	-1	);
 	}else{
 		printf(	"TCP Socket Created\n"	);
 	}
@@ -156,29 +152,39 @@ int	main(	int	argc,	char	**argv	)
 
 	if(	bind(	sockfd,	(	struct	sockaddr	*	)	&server_addr,	addrLen	)	==	-1	)	// Bind The Socket to a connection connfd
 	{
-		sysErr(	"Server Fault : BIND",	-2	);
+		sysErr(	"Server Fault: BIND",	-2	);
 	}else{
 		printf(	"Socket Bound\n"	);
 	}
 
 	if(	(	listen(	sockfd,	1	)	)	!=	0	)			// listen on this connection
 	{
-		sysErr(	"Server Fault : Listen failed...",	-3	);
+		sysErr(	"Server Fault: Listen failed...",	-3	);
 	}else{
 		printf(	"Listen started\n"	);
 	}
 	
-	signal(	SIGCHLD,	SIG_IGN	);
+	if(	signal(	SIGCHLD,	SIG_IGN	)	==	SIG_ERR	)
+	{
+		sysErr(	"Server Fault: Ignore Childreturns",	-22	);
+	}
 	//----------------------------------------------------------------------------------------------
 	//										SERVER START ENDED	
 	//----------------------------------------------------------------------------------------------	
 		
 	while(	true	)										// Start to accept new TCP connection until [CTRL]+C
 	{
-		printf(	"Waiting for new connection\n"	);		// wait for incoming TCP-Connection
-		
-		connfd	=	accept(	sockfd,	(	struct	sockaddr	*)	&client_addr,	&addrLen	);	// Accept TCP connection
-		if(	fork()	==	0	)
+		printf(	"Waiting for new connection\n"	);		// wait for incoming TCP-Connection		
+		if(	(connfd	=	accept(	sockfd,	(	struct	sockaddr	*)	&client_addr,	&addrLen	)	)	<	0	)	// Accept TCP connection
+		{
+			sysErr(	"Server Fault:	Accepting TCP Connection",	-6	);
+		}
+		pid_t	newchild	=	fork();
+		if(	newchild	<	0	)
+		{
+			sysErr(	"Server Fault: Creating Child failed",	-5	);
+		}
+		if(	newchild	==	0	)
 		{
 			
 			if(	connfd	<	0	)
@@ -205,16 +211,16 @@ int	main(	int	argc,	char	**argv	)
 				const	char	s2[2]	=	"/";
 		//----------------------------------------------------------
 				token	=	strtok(	fullRequest,	s	);
-				token	=	strtok(	NULL,	s	);
-				
+				token	=	strtok(	NULL,	s	);				
 				check	=	strtok(	token,	s2	);
+				
 				while(	check	!=	NULL	)
 				{
 					check	=	strtok(	NULL,	s2	);
 					if(	strcmp(	check,	".."	)	==	0	)
 					{
 						printf(	"Could have tried to exit working directory\n"	);
-						strcpy(	token,	""	);
+						strcpy(	token,	" "	);
 					}
 				}
 				
@@ -225,39 +231,88 @@ int	main(	int	argc,	char	**argv	)
 					printf(	"change token to index.html\n"	);
 					strcpy(	token,	"index.html"	);
 				}
-		//----------------------------------------------------------								
+		//----------------------------------------------------------	
+		
 				FILE	*fp;
 				if(	(	fp	=	getFile(	token	)	)	==	NULL	)
 				{
-					write(	connfd,	Header404,	strlen(	Header404	)	);
-					write(	connfd,	serverName,	strlen(	serverName	)	);
-					write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
-					fp	=	fopen(	"microwww/404.html",	"r"	);
+					
+					if(	write(	connfd,	Header404,	strlen(	Header404	)	)	<	0	)
+					{
+						sysErr(	"Server Fault: writing to socket",	-7	);
+					}
+					if(	write(	connfd,	serverName,	strlen(	serverName	)	)	<	0	)
+					{
+						sysErr(	"Server Fault: writing to socket",	-8	);
+					}
+					if(	write(	connfd,	emptyLine,	strlen(	emptyLine	)	)	<	0	)
+					{
+						sysErr(	"Server Fault: writing to socket",	-9	);
+					}
+					if(	(	fp	=	fopen(	"microwww/404.html",	"r"	)	)	==	NULL	)
+					{
+						sysErr(	"Server Fault: opening File",	-10	);
+					}
 					sendFile(	fp,	connfd	);	
-					fclose(	fp	);
+					if(	fclose(	fp	)	==	EOF	)
+					{
+						sysErr(	"Server Fault: closing File",	-11	);
+					}
 				}else{
-					write(	connfd,	Header200,	strlen(	Header200	)	);
-					write(	connfd,	serverName,	strlen(	serverName	)	);
-					write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
+					if(	write(	connfd,	Header200,	strlen(	Header200	)	)	<	0	)
+					{
+						sysErr(	"Server Fault: writing to socket",	-12	);
+					}
+					if(	write(	connfd,	serverName,	strlen(	serverName	)	)	<	0	)
+					{
+						sysErr(	"Server Fault: writing to socket",	-13	);
+					}
+					if(	write(	connfd,	emptyLine,	strlen(	emptyLine	)	)	<	0	)
+					{
+						sysErr(	"Server Fault: writing to socket",	-14	);
+					}
 					sendFile(	fp,	connfd	);
-					fclose(	fp	);
+					if(	fclose(	fp	)	==	EOF	)
+					{
+						sysErr(	"Server Fault: closing File",	-15	);
+					}
 				}
 									
 			}else{			
-				// Make 501 Message Here
-				write(	connfd,	Header501,	strlen(	Header501	)	);
-				write(	connfd,	serverName,	strlen( serverName	)	);
-				write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
+				if(	write(	connfd,	Header501,	strlen(	Header200	)	)	<	0	)
+				{
+					sysErr(	"Server Fault: writing to socket",	-16	);
+				}
+				if(	write(	connfd,	serverName,	strlen(	serverName	)	)	<	0	)
+				{
+					sysErr(	"Server Fault: writing to socket",	-17	);
+				}
+				if(	write(	connfd,	emptyLine,	strlen(	emptyLine	)	)	<	0	)
+				{
+					sysErr(	"Server Fault: writing to socket",	-18	);
+				}
 				FILE	*fp;
-				fp	=	fopen(	"microwww/501.html",	"r"	);
+				if(	(	fp	=	fopen(	"microwww/501.html",	"r"	)	)	==	NULL	)
+				{
+					sysErr(	"Server Fault: opening File",	-19	);
+				}
 				sendFile(	fp,	connfd	);
-				fclose(	fp	);
+				if(	fclose(	fp	)	==	EOF	)
+				{
+					sysErr(	"Server Fault: closing File",	-20	);
+				}
 			}
 			
 			printf(	"Connection closing\n"	);					// Close Sockfd
-			close(	connfd	);
+			if(	close(	connfd	)	<	0	)
+			{
+				sysErr(	"Server Fault: closing Connection",	-21	);
+			}
 		}			
 	}	
-	close(	sockfd	);										// Before exit close the initial socket
+	if(	close(	sockfd	)	<	0	)
+	{
+		sysErr(	"Server Fault: closing Connection",	-22	);
+	}										// Before exit close the initial socket
 	return 0;
 }
