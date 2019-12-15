@@ -7,7 +7,7 @@
 #include	<unistd.h>
 #include	<stdbool.h>
 #include	<signal.h>
-
+//#define	REQ_LEN	1024
 // Define Buffer length
 const	size_t	REQ_LEN	=	1024;
 
@@ -202,34 +202,26 @@ int	main(	int	argc,	char	**argv	)
 			printf(	"Method : %s\n",	method	);
 			
 			
-			if(	strcmp(	method,	"GET"	)	==	0	)
+			if(	strcmp(	method,	"GET"	)	==	0	)			// GET command
 			{			
 				const	char	s[2]	=	" ";
 				char	*token;	
-				char	*check;
-				const	char	s2[2]	=	"/";
 		//----------------------------------------------------------
 				token	=	strtok(	fullRequest,	s	);
 				token	=	strtok(	NULL,	s	);				
-				check	=	strtok(	token,	s2	);
-				
-				while(	check	!=	NULL	)
-				{
-					check	=	strtok(	NULL,	s2	);
-					if(	strcmp(	check,	".."	)	==	0	)
-					{
-						printf(	"Could have tried to exit working directory\n"	);
-						strcpy(	token,	" "	);
-					}
-				}
-				
-				token[strlen(	token	)]	=	'\0';			
-				printf(	"File: \"%s\"\n",	token	);
+				token[strlen(	token	)]	=	'\0';
+				printf(	"File: \"%s\"\n",	token	);				
 				if(	strcmp(	token,	"/"	)	==	0	)
 				{
 					printf(	"change token to index.html\n"	);
 					strcpy(	token,	"index.html"	);
 				}
+				if(	strchr(	token,	'/'	)	!=	NULL	)		// Sets page to index.html if / is found (security)
+				{
+					printf(	"Could have tried to escape\n"	);
+					strcpy(	token,	"index.html"	);
+				}
+				
 		//----------------------------------------------------------	
 		
 				FILE	*fp;
@@ -277,7 +269,7 @@ int	main(	int	argc,	char	**argv	)
 					}
 				}
 									
-			}else{			
+			}else{	// Not Implemented Message		
 				if(	write(	connfd,	Header501,	strlen(	Header200	)	)	<	0	)
 				{
 					sysErr(	"Server Fault: writing to socket",	-16	);
@@ -307,6 +299,7 @@ int	main(	int	argc,	char	**argv	)
 			{
 				sysErr(	"Server Fault: closing Connection",	-21	);
 			}
+			exit(	0	);
 		}			
 	}	
 	if(	close(	sockfd	)	<	0	)
