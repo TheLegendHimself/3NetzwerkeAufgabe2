@@ -176,69 +176,74 @@ int	main(	int	argc,	char	**argv	)
 		
 	while(	true	)										// Start to accept new TCP connection until [CTRL]+C
 	{
-		printf(	"Waiting for new connection\n"	);			// wait for incoming TCP-Connection
+		printf(	"Waiting for new connection\n"	);		// wait for incoming TCP-Connection
+		
 		connfd	=	accept(	sockfd,	(	struct	sockaddr	*)	&client_addr,	&addrLen	);	// Accept TCP connection
-		if(	connfd	<	0	)
+		if(	fork()	==	0	)
 		{
-			sysErr(	"Server Fault: server accept failed",	-4	);
-		}else{
-			printf(	"Connection accepted\n"	);
-		}
-		
-		char	*fullRequest;	
-		fullRequest	=	getRequest(	connfd	);				// Gets Request From Socket
-		printf(	"Complete Request: \n %s \n",	fullRequest	);	
-		
-		char	*method;
-		method	=	getMethod(	fullRequest	);				// Extracts the method from fullRequest		
-		printf(	"Method : %s\n",	method	);
-		
-		
-		if(	strcmp(	method,	"GET"	)	==	0	)
-		{			
-			const	char	s[2]	=	" ";
-			char	*token;	
-	//----------------------------------------------------------
-			token	=	strtok(	fullRequest,	s	);
-			token	=	strtok(	NULL,	s	);
-			token[strlen(	token	)]	=	'\0';			
-			printf(	"File: \"%s\"\n",	token	);
-			if(	strcmp(	token,	"/"	)	==	0	)
+			
+			if(	connfd	<	0	)
 			{
-				printf(	"change token to index.html\n"	);
-				strcpy(	token,	"index.html"	);
-			}
-	//----------------------------------------------------------								
-			FILE	*fp;
-			if(	(	fp	=	getFile(	token	)	)	==	NULL	)
-			{
-				write(	connfd,	Header404,	strlen(	Header404	)	);
-				write(	connfd,	serverName,	strlen(	serverName	)	);
-				write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
-				fp	=	fopen(	"microwww/404.html",	"r"	);
-				sendFile(	fp,	connfd	);	
-				fclose(	fp	);
+				sysErr(	"Server Fault: server accept failed",	-4	);
 			}else{
-				write(	connfd,	Header200,	strlen(	Header200	)	);
-				write(	connfd,	serverName,	strlen(	serverName	)	);
+				printf(	"Connection accepted\n"	);
+			}
+			
+			char	*fullRequest;	
+			fullRequest	=	getRequest(	connfd	);				// Gets Request From Socket
+			printf(	"Complete Request: \n %s \n",	fullRequest	);	
+			
+			char	*method;
+			method	=	getMethod(	fullRequest	);				// Extracts the method from fullRequest		
+			printf(	"Method : %s\n",	method	);
+			
+			
+			if(	strcmp(	method,	"GET"	)	==	0	)
+			{			
+				const	char	s[2]	=	" ";
+				char	*token;	
+		//----------------------------------------------------------
+				token	=	strtok(	fullRequest,	s	);
+				token	=	strtok(	NULL,	s	);
+				token[strlen(	token	)]	=	'\0';			
+				printf(	"File: \"%s\"\n",	token	);
+				if(	strcmp(	token,	"/"	)	==	0	)
+				{
+					printf(	"change token to index.html\n"	);
+					strcpy(	token,	"index.html"	);
+				}
+		//----------------------------------------------------------								
+				FILE	*fp;
+				if(	(	fp	=	getFile(	token	)	)	==	NULL	)
+				{
+					write(	connfd,	Header404,	strlen(	Header404	)	);
+					write(	connfd,	serverName,	strlen(	serverName	)	);
+					write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
+					fp	=	fopen(	"microwww/404.html",	"r"	);
+					sendFile(	fp,	connfd	);	
+					fclose(	fp	);
+				}else{
+					write(	connfd,	Header200,	strlen(	Header200	)	);
+					write(	connfd,	serverName,	strlen(	serverName	)	);
+					write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
+					sendFile(	fp,	connfd	);
+					fclose(	fp	);
+				}
+									
+			}else{			
+				// Make 501 Message Here
+				write(	connfd,	Header501,	strlen(	Header501	)	);
+				write(	connfd,	serverName,	strlen( serverName	)	);
 				write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
+				FILE	*fp;
+				fp	=	fopen(	"microwww/501.html",	"r"	);
 				sendFile(	fp,	connfd	);
 				fclose(	fp	);
 			}
-								
-		}else{			
-			// Make 501 Message Here
-			write(	connfd,	Header501,	strlen(	Header501	)	);
-			write(	connfd,	serverName,	strlen( serverName	)	);
-			write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
-			FILE	*fp;
-			fp	=	fopen(	"microwww/501.html",	"r"	);
-			sendFile(	fp,	connfd	);
-			fclose(	fp	);
-		}
-		
-		printf(	"Connection closing\n"	);					// Close Sockfd
-		close(	connfd	);									
+			
+			printf(	"Connection closing\n"	);					// Close Sockfd
+			close(	connfd	);
+		}			
 	}	
 	close(	sockfd	);										// Before exit close the initial socket
 	return 0;
