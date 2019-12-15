@@ -216,7 +216,7 @@ int	main(	int	argc,	char	**argv	)
 					printf(	"change token to index.html\n"	);
 					strcpy(	token,	"index.html"	);
 				}
-				if(	strchr(	token,	'/'	)	!=	NULL	&&	strchr(	NULL,	'/'	)	!=	NULL	)// Sets page to index.html if / is found (security)
+				if(	strchr(	token,	'/'	)	!=	NULL	&&	strchr(	token,	'/'	)	!=	NULL	)// Sets page to index.html if / is found (security)
 				{
 					printf(	"Could have tried to escape\n"	);
 					strcpy(	token,	"index.html"	);
