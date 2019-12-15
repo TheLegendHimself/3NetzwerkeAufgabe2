@@ -10,14 +10,14 @@
 
 // Define Buffer length
 const	size_t	REQ_LEN	=	1024;
-const	char	*NotImpl	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
-const	char	*NotImplFile	=	"<html><body><b>501</b> Operation not supported</body></html>\\r\\n\n";
-const	char	*NotImpl1	=	"\\r\\n\n";
-const	char	*ok	=	"HTTP/1.0 200 OK\\r\\n\n";
-const	char	*ok1	=	"Content-type: text/html\\r\\n\n";
-const	char	*ok3	=	"\\r\\n\n";
-const	char	*okFile	=	"<html><body>Dies ist die eine Fake Seite des Webservers!</body></html>\\r\\n\n";
 const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\\r\\n\n";
+const	char	*Header200	=	"HTTP/1.0 200 Header200\\r\\n\nContent-type: text/html\\r\\n\n";
+const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
+const	char	*Header404	=	"HTTP/1.0 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
+const	char	*emptyLine	=	"\\r\\n\n";
+
+//const	char	*okFile	=	"<html><body>Dies ist die eine Fake Seite des Webservers!</body></html>\\r\\n\n";
+
 
 int	get_line(	int	sock,	char	*buf,	int	size	)
 {
@@ -62,19 +62,72 @@ void	usage(	char	*argv0	)							// The user entered something stupid. Tell him.
 	exit(	0	);
 }
 
-int	sendAnswer(	int	code,	char	*filename	)
+FILE	*getFile(	char	*token	)
 {
-	if(	code	==	200	)
-	{
-		
-	}
+	char	pathToFile[REQ_LEN];
+	FILE	*fp;
+	strcpy(	pathToFile,	"microwww/"	);
+	strcat(	pathToFile,	token	);
+	printf(	"FullPath \"%s\"\n",	pathToFile	);
+	fp	=	fopen(	pathToFile,	"r"	);	// TO-DO: check for / in token so you cant leave
 	
+	if(	fp	==	NULL	)
+	{
+		return	NULL;
+		//printf(	"Not Found 404\n"	);
+	}
+	return	fp;
+}
+int	sendFile(	FILE	*fp,	int	connfd	)
+{
+	char	fileout[REQ_LEN];
+	while(	fgets(	fileout,	sizeof(	fileout	),	fp	)	!=	NULL	)
+	{
+		printf(	"Read and send: %s\n",	 fileout	);
+		write(	connfd,	fileout,	strlen(	fileout	)	);
+	}
 	return	0;
 }
+char*	getRequest(	int	connfd	)
+{
+	char	request[REQ_LEN];
+	char	*fullRequest;
+	size_t	RequestLength	=	1;
+	int	numchars	=	2;
+	
+	fullRequest	=	(	char*	)	malloc(	RequestLength	);
+	while(	numchars	>	1	)
+	{
+		numchars	=	get_line(	connfd,	request,	sizeof(	request	)	);
+		//printf(	"Received: %s\n",	request	);
+		RequestLength	+=	strlen(	request	);
+		fullRequest	=	(	char*	)	realloc(	fullRequest,	RequestLength	);
+		strcat(	fullRequest,	request	);			
+	}
+	return fullRequest;
+}
 
-int	getRequest();
-
-
+char*	getMethod(	char*	fullRequest	)
+{
+	char	*method	=	(	char*	)malloc(	sizeof(	char)	*	21	);
+	size_t	i,	j;
+	
+	i	=	0;
+	j	=	0;
+		
+	while(	fullRequest[i]	!=	' '	&&	(	j	<	strlen(	fullRequest	)	)	)
+	{
+		method[i]	=	fullRequest[i];
+		i++;
+		j++;
+		if(	i	>=	20	)
+		{
+			printf(	"Method not found\n"	);
+			break;
+		}
+	}
+	return	method;
+}
 
 int	main(	int	argc,	char	**argv	)
 {	
@@ -132,94 +185,57 @@ int	main(	int	argc,	char	**argv	)
 			printf(	"Connection accepted\n"	);
 		}
 		
-		char	request[REQ_LEN];
-		char	*fullRequest;
-		size_t	RequestLength	=	1;
-		int	numchars	=	2;
-		char	method[25]	=	"";
-		size_t	i,	j;
+		char	*fullRequest;	
+		fullRequest	=	getRequest(	connfd	);				// Gets Request From Socket
+		printf(	"Complete Request: \n %s \n",	fullRequest	);	
 		
-		fullRequest	=	(	char*	)	malloc(	RequestLength	);
-		
-		while(	numchars	>	1	)
-		{
-			numchars	=	get_line(	connfd,	request,	sizeof(	request	)	);
-			printf(	"Received: %s\n",	request	);
-			RequestLength	+=	strlen(	request	);
-			fullRequest	=	(	char*	)	realloc(	fullRequest,	RequestLength	);
-			strcat(	fullRequest,	request	);			
-		}
-		printf(	"Complete Request: \n %s \n",	fullRequest	);
-		
-		i	=	0;
-		j	=	0;
-		
-		while(	fullRequest[i]	!=	' '	&&	(	j	<	strlen(	fullRequest	)	)	)
-		{
-			method[i]	=	fullRequest[i];
-			i++;
-			j++;
-			if(	i	>=	20	)
-			{
-				printf(	"Method not found\n"	);
-				break;
-			}
-		}
+		char	*method;
+		method	=	getMethod(	fullRequest	);				// Extracts the method from fullRequest		
 		printf(	"Method : %s\n",	method	);
+		
 		
 		if(	strcmp(	method,	"GET"	)	==	0	)
 		{			
 			const	char	s[2]	=	" ";
-			char	*token;
-			char	pathToFile[REQ_LEN];
-			FILE	*fp;
-			
+			char	*token;	
+	//----------------------------------------------------------
 			token	=	strtok(	fullRequest,	s	);
 			token	=	strtok(	NULL,	s	);
-			token[strlen(	token	)	]	=	'\0';		
-			printf(	"File: \"%s\"\n",	token	);			
-			strcpy(	pathToFile,	"microwww/"	);
-			strcat(	pathToFile,	token	);
-			printf(	"FullPath \"%s\"\n",	pathToFile	);
-										
-			fp	=	fopen(	pathToFile,	"r"	);	// TO-DO: check for / in token so you cant leave
-			
-			if(	fp	==	NULL	)
+			token[strlen(	token	)]	=	'\0';			
+			printf(	"File: \"%s\"\n",	token	);
+			if(	strcmp(	token,	"/"	)	==	0	)
 			{
-				printf(	"Not Found 404\n"	);
+				printf(	"change token to index.html\n"	);
+				strcpy(	token,	"index.html"	);
+			}
+	//----------------------------------------------------------								
+			FILE	*fp;
+			if(	(	fp	=	getFile(	token	)	)	==	NULL	)
+			{
+				write(	connfd,	Header404,	strlen(	Header404	)	);
+				write(	connfd,	serverName,	strlen(	serverName	)	);
+				write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
+				fp	=	fopen(	"microwww/404.html",	"r"	);
+				sendFile(	fp,	connfd	);	
+				fclose(	fp	);
 			}else{
-				char	fileout[REQ_LEN];
-				
-				write(	connfd,	ok,	strlen(	ok	)	);
-				write(	connfd,	ok1,	strlen(	ok1	)	);
-				write(	connfd,	serverName,	strlen( serverName	)	);
-				write(	connfd,	ok3,	strlen(	ok3	)	);				
-				//printf(	"Size fileout: %d\n",	sizeof(	fileout	)	);
-				//printf(	"Size fileout: %d\n",	strlen(	fileout	)	);
-				
-				while(	fgets(	fileout,	sizeof(	fileout	),	fp	)	!=	NULL	)
-				{
-					printf(	"Read and send: %s\n",	 fileout	);
-					write(	connfd,	fileout,	strlen(	fileout	)	);
-				}
+				write(	connfd,	Header200,	strlen(	Header200	)	);
+				write(	connfd,	serverName,	strlen(	serverName	)	);
+				write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
+				sendFile(	fp,	connfd	);
 				fclose(	fp	);
 			}
-			/* How to use strtok 
-			while(	token	!=	NULL	)
-			{
-				token	=	strtok(	NULL,	s	);
-				//printf(	"accepted part %s\n",	token	);				
-			}
-			*/
-			
-		}else{	
-			write(	connfd,	NotImpl,	strlen(	NotImpl	)	);
+								
+		}else{			
+			// Make 501 Message Here
+			write(	connfd,	Header501,	strlen(	Header501	)	);
 			write(	connfd,	serverName,	strlen( serverName	)	);
-			write(	connfd,	ok3,	strlen(	ok3	)	);
-			write(	connfd,	NotImplFile,	strlen(	NotImplFile	)	);
-			write(	connfd,	NotImpl1,	strlen(	NotImpl1	)	);
+			write(	connfd,	emptyLine,	strlen(	emptyLine	)	);
+			FILE	*fp;
+			fp	=	fopen(	"microwww/501.html",	"r"	);
+			sendFile(	fp,	connfd	);
+			fclose(	fp	);
 		}
-
 		
 		printf(	"Connection closing\n"	);					// Close Sockfd
 		close(	connfd	);									
