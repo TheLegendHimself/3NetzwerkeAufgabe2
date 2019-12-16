@@ -7,6 +7,7 @@
 #include	<unistd.h>
 #include	<stdbool.h>
 #include	<signal.h>
+#include	<sys/socket.h>
 //#define	REQ_LEN	1024
 // Define Buffer length
 const	size_t	REQ_LEN	=	1024;
@@ -157,21 +158,32 @@ int	main(	int	argc,	char	**argv	)
 {	
 	//----------------------------------------------------------------------------------------------
 	//										SERVER START
-	//----------------------------------------------------------------------------------------------
-	int	connfd,	sockfd;										// int for socket and connection number
+	//----------------------------------------------------------------------------------------------											// 			//int for socket and connection number
 	struct	sockaddr_in	server_addr,	client_addr;		// Struct for server & client ip & port
 	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	);	// length of server or client struct
 	const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\\r\\n\n";
-	const	char	*Header200	=	"HTTP/1.1 200 OK\\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*Header200	=	"HTTP/1.0 200 OK\\r\\n\nContent-type: text/html\\r\\n\n";
 	const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
 	const	char	*Header404	=	"HTTP/1.0 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
 	const	char	*emptyLine	=	"\\r\\n\n";
-	const	char	*endHeader	=	"CRLF\n\n";
-	
+	const	char	*endHeader	=	"\r\n\n";
+	int	sockfd,	connfd;
 	if(	argc	<	2	)									// Check for right number of arguments
 	{
 		usage(	argv[0]	);
 	}
+	if(	signal(	SIGCHLD,	SIG_IGN	)	==	SIG_ERR	)
+	{
+		sysErr(	"Server Fault: Ignore Childreturns",	-23	);
+	}
+	
+	
+	memset(	&server_addr,	0,	addrLen	);					// writes 0's to server ip 	 
+	server_addr.sin_addr.s_addr	=	htonl(	INADDR_ANY	);	// sets server ip adress to own ip adress	
+	server_addr.sin_family	=	AF_INET;					// The ip adress is a iPv4 adress	
+	server_addr.sin_port	=	htons(	(	u_short	)	atoi(	argv[1]	)	);	// gets port from arguments
+
+	
 	
 	if(	(	sockfd	=	socket(	AF_INET,	SOCK_STREAM,	0	)	)	==	-1	)	// Creates Socket (TCP)
 	{
@@ -180,37 +192,33 @@ int	main(	int	argc,	char	**argv	)
 		printf(	"TCP Socket Created\n"	);
 	}
 	
-	memset(	&server_addr,	0,	addrLen	);					// writes 0's to server ip 	 
-	server_addr.sin_addr.s_addr	=	htonl(	INADDR_ANY	);	// sets server ip adress to own ip adress	
-	server_addr.sin_family	=	AF_INET;					// The ip adress is a iPv4 adress	
-	server_addr.sin_port	=	htons(	(	u_short	)	atoi(	argv[1]	)	);	// gets port from arguments
-
+	
 	if(	bind(	sockfd,	(	struct	sockaddr	*	)	&server_addr,	addrLen	)	==	-1	)	// Bind The Socket to a connection connfd
 	{
 		sysErr(	"Server Fault: BIND",	-2	);
 	}else{
 		printf(	"Socket Bound\n"	);
 	}
-
 	if(	(	listen(	sockfd,	1	)	)	!=	0	)			// listen on this connection
 	{
 		sysErr(	"Server Fault: Listen failed...",	-3	);
 	}else{
 		printf(	"Listen started\n"	);
 	}
-	
-	if(	signal(	SIGCHLD,	SIG_IGN	)	==	SIG_ERR	)
-	{
-		sysErr(	"Server Fault: Ignore Childreturns",	-23	);
-	}
-	//----------------------------------------------------------------------------------------------
-	//										SERVER START ENDED	
-	//----------------------------------------------------------------------------------------------	
 		
+	
+			
+	
+		
+			//----------------------------------------------------------------------------------------------
+			//										SERVER START ENDED	
+			//----------------------------------------------------------------------------------------------	
+		
+	
 	while(	true	)										// Start to accept new TCP connection until [CTRL]+C
-	{
-		printf(	"Waiting for new connection\n"	);		// wait for incoming TCP-Connection		
-		if(	(connfd	=	accept(	sockfd,	(	struct	sockaddr	*)	&client_addr,	&addrLen	)	)	<	0	)	// Accept TCP connection
+	{	
+		printf(	"Waiting for new connection\n"	);		// wait for incoming TCP-Connection	
+		if(	(	connfd	=	accept(	sockfd,	(	struct	sockaddr	*)	&client_addr,	&addrLen	)	)	<	0	)	// Accept TCP connection
 		{
 			sysErr(	"Server Fault:	Accepting TCP Connection",	-6	);
 		}
@@ -221,23 +229,23 @@ int	main(	int	argc,	char	**argv	)
 		}
 		if(	newchild	==	0	)
 		{
-			
+
 			if(	connfd	<	0	)
 			{
 				sysErr(	"Server Fault: server accept failed",	-4	);
 			}else{
 				printf(	"Connection accepted\n"	);
 			}
-			
+
 			char	*fullRequest;	
 			fullRequest	=	getRequest(	connfd	);				// Gets Request From Socket
 			printf(	"Complete Request: \n %s \n",	fullRequest	);	
-			
+
 			char	*method;
 			method	=	getMethod(	fullRequest	);				// Extracts the method from fullRequest		
 			printf(	"Method : %s\n",	method	);
-			
-			
+
+
 			if(	strcmp(	method,	"GET"	)	==	0	)			// GET command
 			{			
 				const	char	s[2]	=	" ";
@@ -249,8 +257,8 @@ int	main(	int	argc,	char	**argv	)
 				printf(	"File: \"%s\"\n",	token	);				
 				if(	strcmp(	token,	"/"	)	==	0	)
 				{
-					printf(	"change token to index.html\n"	);
-					strcpy(	token,	"index.html"	);
+					printf(	"change token to index.htm\n"	);
+					strcpy(	token,	"index.htm"	);
 				}
 				char	tokken[strlen(	token	)];
 				strcpy(	tokken,	token	);
@@ -258,31 +266,31 @@ int	main(	int	argc,	char	**argv	)
 				tokkken[0]	=	tokken[0];
 				if(	strcmp(tokkken,	"/"	)	==	0	)
 				{
-						char	inputstr[strlen(	tokken	)];//	=	(	char*	)	malloc(	strlen(	token	)	);
-						int	i	=	0;
-						while(	i	<	(	int	)	strlen(	token	)	)
-						{
-							inputstr[i]	=	tokken[i	+	1];
-							i++;
-						}
-						if(	strchr(	inputstr,	'/'	)	!=	NULL	)		// Sets page to index.htm if / is found (security)
-						{
-							printf(	"Could have tried to escape\n"	);
-							strcpy(	token,	"index.htm"	);
-						}
+					char	inputstr[strlen(	tokken	)];//	=	(	char*	)	malloc(	strlen(	token	)	);
+					int	i	=	0;
+					while(	i	<	(	int	)	strlen(	token	)	)
+					{
+						inputstr[i]	=	tokken[i	+	1];
+						i++;
+					}
+					if(	strchr(	inputstr,	'/'	)	!=	NULL	)		// Sets page to index.htm if / is found (security)
+					{
+						printf(	"Could have tried to escape\n"	);
+						strcpy(	token,	"index.htm"	);
+					}
 				}
-				
+	
 		//----------------------------------------------------------	
-		
+
 				FILE	*fp;
 				if(	(	fp	=	getFile(	token	)	)	==	NULL	)
 				{
-					
+		
 					writeToSocket(	connfd,	Header404,	0	);
 					writeToSocket(	connfd,	serverName,	0	);
 					writeToSocket(	connfd,	emptyLine,	0	);
 					writeToSocket(	connfd,	endHeader,	0	);
-					if(	(	fp	=	fopen(	"microwww/404.html",	"r"	)	)	==	NULL	)
+					if(	(	fp	=	fopen(	"microwww/404.htm",	"r"	)	)	==	NULL	)
 					{
 						sysErr(	"Server Fault: opening File",	-10	);
 					}
@@ -304,14 +312,14 @@ int	main(	int	argc,	char	**argv	)
 						sysErr(	"Server Fault: closing File",	-15	);
 					}
 				}
-									
+						
 			}else{	// Not Implemented Message		
 				writeToSocket(	connfd,	Header501,	0	);
 				writeToSocket(	connfd,	serverName,	0	);
 				writeToSocket(	connfd,	emptyLine,	0	);
 				writeToSocket(	connfd,	endHeader,	0	);
 				FILE	*fp;
-				if(	(	fp	=	fopen(	"microwww/501.html",	"r"	)	)	==	NULL	)
+				if(	(	fp	=	fopen(	"microwww/501.htm",	"r"	)	)	==	NULL	)
 				{
 					sysErr(	"Server Fault: opening File",	-19	);
 				}
@@ -322,19 +330,22 @@ int	main(	int	argc,	char	**argv	)
 					sysErr(	"Server Fault: closing File",	-20	);
 				}
 			}
-			
+
 			printf(	"Connection closing\n"	);					// Close Sockfd
 			if(	close(	connfd	)	<	0	)
 			{
 				sysErr(	"Server Fault: closing Connection",	-21	);
 			}
-			exit(	0	);
-		}			
-			
-		if(	close(	sockfd	)	<	0	)
-		{
-			sysErr(	"Server Fault: closing Connection",	-22	);
+
+			shutdown(	sockfd,	2	);
+			exit(	0	);	
 		}
-	}		// Before exit close the initial socket
+			// Before exit close the initial socket
+	}
+	if(	close(	sockfd	)	<	0	)
+	{
+		sysErr(	"Server Fault: closing Connection",	-22	);
+	}	
+	
 	return 0;
 }
