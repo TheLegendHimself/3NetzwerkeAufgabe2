@@ -216,10 +216,24 @@ int	main(	int	argc,	char	**argv	)
 					printf(	"change token to index.html\n"	);
 					strcpy(	token,	"index.html"	);
 				}
-				if(	strchr(	token,	'/'	)	!=	NULL	&&	strchr(	token,	'/'	)	!=	NULL	)// Sets page to index.html if / is found (security)
+				char	tokken[strlen(	token	)];
+				strcpy(	tokken,	token	);
+				char	tokkken[2];
+				tokkken[0]	=	tokken[0];
+				if(	strcmp(tokkken,	"/"	)	==	0	)
 				{
-					printf(	"Could have tried to escape\n"	);
-					strcpy(	token,	"index.html"	);
+						char	inputstr[strlen(	tokken	)];//	=	(	char*	)	malloc(	strlen(	token	)	);
+						int	i	=	0;
+						while(	i	<	(	int	)	strlen(	token	)	)
+						{
+							inputstr[i]	=	tokken[i	+	1];
+							i++;
+						}
+						if(	strchr(	token,	'/'	)	!=	&tokken[0]	)		// Sets page to index.htm if / is found (security)
+						{
+							printf(	"Could have tried to escape\n"	);
+							strcpy(	token,	"index.htm"	);
+						}
 				}
 				
 		//----------------------------------------------------------	
