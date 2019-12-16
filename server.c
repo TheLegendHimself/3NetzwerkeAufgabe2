@@ -143,7 +143,7 @@ int	writeToSocket(	int	connfd,	const	char	*	message,	int flag	)
 			message	=	arrayPointer;
 	}
 	*/
-	printf(	"Trying to send: \n \"%s\" \n",	message	);
+	printf(	"Trying to send: \n\"%s\" \n",	message	);
 	if(	send(	connfd,	message,	strlen(	message	),	flag	)	<	0	)
 	{
 		sysErr(	"Server Fault: writing to socket",	-7	);
@@ -163,9 +163,10 @@ int	main(	int	argc,	char	**argv	)
 	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	);	// length of server or client struct
 	const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\\r\\n\n";
 	const	char	*Header200	=	"HTTP/1.1 200 OK\\r\\n\nContent-type: text/html\\r\\n\n";
-	const	char	*Header501	=	"HTTP/1.1 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
-	const	char	*Header404	=	"HTTP/1.1 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*Header404	=	"HTTP/1.0 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
 	const	char	*emptyLine	=	"\\r\\n\n";
+	const	char	*endHeader	=	"CRLF\n\n";
 	
 	if(	argc	<	2	)									// Check for right number of arguments
 	{
@@ -280,11 +281,13 @@ int	main(	int	argc,	char	**argv	)
 					writeToSocket(	connfd,	Header404,	0	);
 					writeToSocket(	connfd,	serverName,	0	);
 					writeToSocket(	connfd,	emptyLine,	0	);
+					writeToSocket(	connfd,	endHeader,	0	);
 					if(	(	fp	=	fopen(	"microwww/404.html",	"r"	)	)	==	NULL	)
 					{
 						sysErr(	"Server Fault: opening File",	-10	);
 					}
 					sendFile(	fp,	connfd	);	
+					//writeToSocket(	connfd,	endHeader,	0	);
 					if(	fclose(	fp	)	==	EOF	)
 					{
 						sysErr(	"Server Fault: closing File",	-11	);
@@ -293,7 +296,9 @@ int	main(	int	argc,	char	**argv	)
 					writeToSocket(	connfd,	Header200,	0	);
 					writeToSocket(	connfd,	serverName,	0	);
 					writeToSocket(	connfd,	emptyLine,	0	);
+					writeToSocket(	connfd,	endHeader,	0	);
 					sendFile(	fp,	connfd	);
+					//writeToSocket(	connfd,	endHeader,	0	);
 					if(	fclose(	fp	)	==	EOF	)
 					{
 						sysErr(	"Server Fault: closing File",	-15	);
@@ -304,12 +309,14 @@ int	main(	int	argc,	char	**argv	)
 				writeToSocket(	connfd,	Header501,	0	);
 				writeToSocket(	connfd,	serverName,	0	);
 				writeToSocket(	connfd,	emptyLine,	0	);
+				writeToSocket(	connfd,	endHeader,	0	);
 				FILE	*fp;
 				if(	(	fp	=	fopen(	"microwww/501.html",	"r"	)	)	==	NULL	)
 				{
 					sysErr(	"Server Fault: opening File",	-19	);
 				}
 				sendFile(	fp,	connfd	);
+				//writeToSocket(	connfd,	endHeader,	0	);
 				if(	fclose(	fp	)	==	EOF	)
 				{
 					sysErr(	"Server Fault: closing File",	-20	);
@@ -323,10 +330,11 @@ int	main(	int	argc,	char	**argv	)
 			}
 			exit(	0	);
 		}			
-	}	
-	if(	close(	sockfd	)	<	0	)
-	{
-		sysErr(	"Server Fault: closing Connection",	-22	);
-	}										// Before exit close the initial socket
+			
+		if(	close(	sockfd	)	<	0	)
+		{
+			sysErr(	"Server Fault: closing Connection",	-22	);
+		}
+	}		// Before exit close the initial socket
 	return 0;
 }
