@@ -72,7 +72,7 @@ int	sendFile(	FILE	*fp,	int	connfd	)
 		printf(	"Read and send: %s\n",	 fileout	);
 		if(	write(	connfd,	fileout,	strlen(	fileout	)	)	<	0	)
 		{
-			sysErr(	"Server Fault: writing file to socket",	-24	);
+			sysErr(	"Server Fault: writing file to socket",	-8	);
 		}
 	}
 	return	0;
@@ -118,6 +118,41 @@ char*	getMethod(	char*	fullRequest	)
 	return	method;
 }
 
+int	writeToSocket(	int	connfd,	const	char	*	message,	int flag	)
+{
+	/*
+	char	messageArr[strlen(	message	)];
+	strcpy(	messageArr,	message	);
+	char	mess[2];
+	mess[0]	=	messageArr[0];
+	if(	strcmp(	mess,	" "	)	==	0	)
+	{
+			//char	inputstr[strlen(	tokken	)];//	=	(	char*	)	malloc(	strlen(	token	)	);
+			int	i	=	0;
+			while(	i	<	(	int	)	strlen(	message	)	)
+			{
+				messageArr[i]	=	message[i	+	1];
+				i++;
+			}
+			i	=	0;
+			while(	i	<	(	int	)	strlen(	messageArr	)	)
+			{
+				message[i]	=	messageArr[i];
+			}
+			char	*arrayPointer	=	&messageArr[0];
+			message	=	arrayPointer;
+	}
+	*/
+	printf(	"Trying to send: \n \"%s\" \n",	message	);
+	if(	send(	connfd,	message,	strlen(	message	),	flag	)	<	0	)
+	{
+		sysErr(	"Server Fault: writing to socket",	-7	);
+	}
+	return	0;
+}
+
+
+
 int	main(	int	argc,	char	**argv	)
 {	
 	//----------------------------------------------------------------------------------------------
@@ -127,9 +162,9 @@ int	main(	int	argc,	char	**argv	)
 	struct	sockaddr_in	server_addr,	client_addr;		// Struct for server & client ip & port
 	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	);	// length of server or client struct
 	const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\\r\\n\n";
-	const	char	*Header200	=	"HTTP/1.0 200 Header200\\r\\n\nContent-type: text/html\\r\\n\n";
-	const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
-	const	char	*Header404	=	"HTTP/1.0 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*Header200	=	"HTTP/1.1 200 OK\\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*Header501	=	"HTTP/1.1 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
+	const	char	*Header404	=	"HTTP/1.1 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
 	const	char	*emptyLine	=	"\\r\\n\n";
 	
 	if(	argc	<	2	)									// Check for right number of arguments
@@ -229,7 +264,7 @@ int	main(	int	argc,	char	**argv	)
 							inputstr[i]	=	tokken[i	+	1];
 							i++;
 						}
-						if(	strchr(	token,	'/'	)	!=	&tokken[0]	)		// Sets page to index.htm if / is found (security)
+						if(	strchr(	inputstr,	'/'	)	!=	NULL	)		// Sets page to index.htm if / is found (security)
 						{
 							printf(	"Could have tried to escape\n"	);
 							strcpy(	token,	"index.htm"	);
@@ -242,18 +277,9 @@ int	main(	int	argc,	char	**argv	)
 				if(	(	fp	=	getFile(	token	)	)	==	NULL	)
 				{
 					
-					if(	write(	connfd,	Header404,	strlen(	Header404	)	)	<	0	)
-					{
-						sysErr(	"Server Fault: writing to socket",	-7	);
-					}
-					if(	write(	connfd,	serverName,	strlen(	serverName	)	)	<	0	)
-					{
-						sysErr(	"Server Fault: writing to socket",	-8	);
-					}
-					if(	write(	connfd,	emptyLine,	strlen(	emptyLine	)	)	<	0	)
-					{
-						sysErr(	"Server Fault: writing to socket",	-9	);
-					}
+					writeToSocket(	connfd,	Header404,	0	);
+					writeToSocket(	connfd,	serverName,	0	);
+					writeToSocket(	connfd,	emptyLine,	0	);
 					if(	(	fp	=	fopen(	"microwww/404.html",	"r"	)	)	==	NULL	)
 					{
 						sysErr(	"Server Fault: opening File",	-10	);
@@ -264,18 +290,9 @@ int	main(	int	argc,	char	**argv	)
 						sysErr(	"Server Fault: closing File",	-11	);
 					}
 				}else{
-					if(	write(	connfd,	Header200,	strlen(	Header200	)	)	<	0	)
-					{
-						sysErr(	"Server Fault: writing to socket",	-12	);
-					}
-					if(	write(	connfd,	serverName,	strlen(	serverName	)	)	<	0	)
-					{
-						sysErr(	"Server Fault: writing to socket",	-13	);
-					}
-					if(	write(	connfd,	emptyLine,	strlen(	emptyLine	)	)	<	0	)
-					{
-						sysErr(	"Server Fault: writing to socket",	-14	);
-					}
+					writeToSocket(	connfd,	Header200,	0	);
+					writeToSocket(	connfd,	serverName,	0	);
+					writeToSocket(	connfd,	emptyLine,	0	);
 					sendFile(	fp,	connfd	);
 					if(	fclose(	fp	)	==	EOF	)
 					{
@@ -284,18 +301,9 @@ int	main(	int	argc,	char	**argv	)
 				}
 									
 			}else{	// Not Implemented Message		
-				if(	write(	connfd,	Header501,	strlen(	Header200	)	)	<	0	)
-				{
-					sysErr(	"Server Fault: writing to socket",	-16	);
-				}
-				if(	write(	connfd,	serverName,	strlen(	serverName	)	)	<	0	)
-				{
-					sysErr(	"Server Fault: writing to socket",	-17	);
-				}
-				if(	write(	connfd,	emptyLine,	strlen(	emptyLine	)	)	<	0	)
-				{
-					sysErr(	"Server Fault: writing to socket",	-18	);
-				}
+				writeToSocket(	connfd,	Header501,	0	);
+				writeToSocket(	connfd,	serverName,	0	);
+				writeToSocket(	connfd,	emptyLine,	0	);
 				FILE	*fp;
 				if(	(	fp	=	fopen(	"microwww/501.html",	"r"	)	)	==	NULL	)
 				{
