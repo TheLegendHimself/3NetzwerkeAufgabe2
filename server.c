@@ -7,7 +7,7 @@
 #include	<unistd.h>
 #include	<stdbool.h>
 #include	<signal.h>
-#include	<sys/socket.h>
+//#include	<sys/socket.h>
 //#define	REQ_LEN	1024
 // Define Buffer length
 const	size_t	REQ_LEN	=	1024;
@@ -121,29 +121,6 @@ char*	getMethod(	char*	fullRequest	)
 
 int	writeToSocket(	int	connfd,	const	char	*	message,	int flag	)
 {
-	/*
-	char	messageArr[strlen(	message	)];
-	strcpy(	messageArr,	message	);
-	char	mess[2];
-	mess[0]	=	messageArr[0];
-	if(	strcmp(	mess,	" "	)	==	0	)
-	{
-			//char	inputstr[strlen(	tokken	)];//	=	(	char*	)	malloc(	strlen(	token	)	);
-			int	i	=	0;
-			while(	i	<	(	int	)	strlen(	message	)	)
-			{
-				messageArr[i]	=	message[i	+	1];
-				i++;
-			}
-			i	=	0;
-			while(	i	<	(	int	)	strlen(	messageArr	)	)
-			{
-				message[i]	=	messageArr[i];
-			}
-			char	*arrayPointer	=	&messageArr[0];
-			message	=	arrayPointer;
-	}
-	*/
 	printf(	"Trying to send: \n\"%s\" \n",	message	);
 	if(	send(	connfd,	message,	strlen(	message	),	flag	)	<	0	)
 	{
@@ -161,12 +138,12 @@ int	main(	int	argc,	char	**argv	)
 	//----------------------------------------------------------------------------------------------											// 			//int for socket and connection number
 	struct	sockaddr_in	server_addr,	client_addr;		// Struct for server & client ip & port
 	socklen_t	addrLen	=	sizeof(	struct sockaddr_in	);	// length of server or client struct
-	const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\\r\\n\n";
-	const	char	*Header200	=	"HTTP/1.0 200 OK\\r\\n\nContent-type: text/html\\r\\n\n";
-	const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \\r\\n\nContent-type: text/html\\r\\n\n";
-	const	char	*Header404	=	"HTTP/1.0 404 File Not Found \\r\\n\nContent-type: text/html\\r\\n\n";
-	const	char	*emptyLine	=	"\\r\\n\n";
-	const	char	*endHeader	=	"\r\n\n";
+	const	char	*serverName	=	"SERVER: IHopeYouKnowTheWay\r\n";
+	const	char	*Header200	=	"HTTP/1.0 200 OK\r\nContent-type: text/html\r\n";
+	const	char	*Header501	=	"HTTP/1.0 501 Not Implemented \r\nContent-type: text/html\r\n";
+	const	char	*Header404	=	"HTTP/1.0 404 File Not Found \r\nContent-type: text/html\r\n";
+	const	char	*emptyLine	=	"\n";
+	const	char	*endHeader	=	"\r\n";
 	int	sockfd,	connfd;
 	if(	argc	<	2	)									// Check for right number of arguments
 	{
@@ -199,24 +176,19 @@ int	main(	int	argc,	char	**argv	)
 	}else{
 		printf(	"Socket Bound\n"	);
 	}
-	if(	(	listen(	sockfd,	1	)	)	!=	0	)			// listen on this connection
-	{
-		sysErr(	"Server Fault: Listen failed...",	-3	);
-	}else{
-		printf(	"Listen started\n"	);
-	}
+	//----------------------------------------------------------------------------------------------
+	//										SERVER START ENDED	
+	//----------------------------------------------------------------------------------------------	
 		
-	
-			
-	
-		
-			//----------------------------------------------------------------------------------------------
-			//										SERVER START ENDED	
-			//----------------------------------------------------------------------------------------------	
-		
-	
 	while(	true	)										// Start to accept new TCP connection until [CTRL]+C
-	{	
+	{
+		if(	(	listen(	sockfd,	1	)	)	!=	0	)			// listen on this connection
+		{
+			sysErr(	"Server Fault: Listen failed...",	-3	);
+		}else{
+			printf(	"Listen started\n"	);
+		}
+	
 		printf(	"Waiting for new connection\n"	);		// wait for incoming TCP-Connection	
 		if(	(	connfd	=	accept(	sockfd,	(	struct	sockaddr	*)	&client_addr,	&addrLen	)	)	<	0	)	// Accept TCP connection
 		{
@@ -288,14 +260,14 @@ int	main(	int	argc,	char	**argv	)
 		
 					writeToSocket(	connfd,	Header404,	0	);
 					writeToSocket(	connfd,	serverName,	0	);
-					writeToSocket(	connfd,	emptyLine,	0	);
+					//writeToSocket(	connfd,	emptyLine,	0	);
 					writeToSocket(	connfd,	endHeader,	0	);
 					if(	(	fp	=	fopen(	"microwww/404.htm",	"r"	)	)	==	NULL	)
 					{
 						sysErr(	"Server Fault: opening File",	-10	);
 					}
 					sendFile(	fp,	connfd	);	
-					//writeToSocket(	connfd,	endHeader,	0	);
+					//writeToSocket(	connfd,	emptyLine,	0	);
 					if(	fclose(	fp	)	==	EOF	)
 					{
 						sysErr(	"Server Fault: closing File",	-11	);
@@ -303,10 +275,10 @@ int	main(	int	argc,	char	**argv	)
 				}else{
 					writeToSocket(	connfd,	Header200,	0	);
 					writeToSocket(	connfd,	serverName,	0	);
-					writeToSocket(	connfd,	emptyLine,	0	);
+					//writeToSocket(	connfd,	emptyLine,	0	);
 					writeToSocket(	connfd,	endHeader,	0	);
 					sendFile(	fp,	connfd	);
-					//writeToSocket(	connfd,	endHeader,	0	);
+					//writeToSocket(	connfd,	emptyLine,	0	);
 					if(	fclose(	fp	)	==	EOF	)
 					{
 						sysErr(	"Server Fault: closing File",	-15	);
@@ -316,7 +288,7 @@ int	main(	int	argc,	char	**argv	)
 			}else{	// Not Implemented Message		
 				writeToSocket(	connfd,	Header501,	0	);
 				writeToSocket(	connfd,	serverName,	0	);
-				writeToSocket(	connfd,	emptyLine,	0	);
+				//writeToSocket(	connfd,	emptyLine,	0	);
 				writeToSocket(	connfd,	endHeader,	0	);
 				FILE	*fp;
 				if(	(	fp	=	fopen(	"microwww/501.htm",	"r"	)	)	==	NULL	)
@@ -324,23 +296,20 @@ int	main(	int	argc,	char	**argv	)
 					sysErr(	"Server Fault: opening File",	-19	);
 				}
 				sendFile(	fp,	connfd	);
-				//writeToSocket(	connfd,	endHeader,	0	);
+				//writeToSocket(	connfd,	emptyLine,	0	);
 				if(	fclose(	fp	)	==	EOF	)
 				{
 					sysErr(	"Server Fault: closing File",	-20	);
 				}
+				close(	connfd	);
 			}
 
 			printf(	"Connection closing\n"	);					// Close Sockfd
-			if(	close(	connfd	)	<	0	)
-			{
-				sysErr(	"Server Fault: closing Connection",	-21	);
-			}
-
-			shutdown(	sockfd,	2	);
+			
+			
 			exit(	0	);	
 		}
-			// Before exit close the initial socket
+		close(	connfd	);
 	}
 	if(	close(	sockfd	)	<	0	)
 	{
