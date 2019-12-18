@@ -12,5 +12,6 @@ It is a tiny HTTP 1.0 Server, which does only supports:
 but he can do that parallel
 
 it only supports 1 subdirectory, where ALL the html / htm 
-files CAN be located, trying to open any other File will
-fail if the path to file is given from socket
+files and files for the server in gerneral have to be stored
+without subdirectories, because trying to access anything outside
+this one directory is prevented
