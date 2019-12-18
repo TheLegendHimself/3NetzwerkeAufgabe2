@@ -15,3 +15,9 @@ it only supports 1 subdirectory, where ALL the html / htm
 files and files for the server in gerneral have to be stored
 without subdirectories, because trying to access anything outside
 this one directory is prevented
+
+
+To start the server simply execute a compiled version of server.c.
+(GCC | MAKE)
+then execute it combined with a port number to start the server
+(use sudo or port > 1000) 
